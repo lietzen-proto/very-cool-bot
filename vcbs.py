@@ -55,6 +55,8 @@ def get_Gimg_apikey():
     try:
         with open('.apikeys.json', 'r') as f:
             data = json.load(f)
+            global cse
+            cse = data['apikeys']['cse']
             return data['apiKeys']['Google-images']
     except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
         logger("bad", f"Error reading API key: {e}")
@@ -84,7 +86,7 @@ def ask_gemini(prompt):
 def get_gimg(query):
     safe_search = "active"  # moderate: moderate safe search
     api_key = imgkey
-    cse_id = "55612e53d0e624367"
+    cse_id = cse
     query = query.strip()
     num = 1
     filter = "top"
@@ -113,12 +115,52 @@ def get_tenor_gif(query):
     except requests.exceptions.RequestException as e:
         return f"Error fetching GIF: {e}"
 
+def get_github_apikey():
+    try:
+        with open('.apikeys.json', 'r') as f:
+            data = json.load(f)
+            return data['apiKeys']['github']
+    except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
+        logger("bad", f"Error reading GitHub API key: {e}")
+        return None
 
+github_token = get_github_apikey()
 
-# Version info...
 version = 0.7
 channel = "public_beta"
 update_name = "the sentience update"
+
+def update_bot(user, init):
+    logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
+    try:
+        # Replace 'YourUsername' and 'YourRepository' with your actual GitHub username and repository name
+        github_api_url = "https://api.github.com/repos/Lietzen-py/very-cool-bot/releases/latest"
+        headers = {}
+        if github_token:
+            headers['Authorization'] = f'token {github_token}'
+        response = requests.get(github_api_url, headers=headers)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        release_info = response.json()
+        latest_version = release_info["tag_name"]
+        latest_release_url = release_info["html_url"]
+
+        if latest_version > str(version):
+            os.system("python3 update.py")
+            return (
+                f"A new version is available! Current version: {version}, Latest version: {latest_version}. "
+                f" <:Actionpending:1351789321140699191> Downloading update!"
+            )
+
+        else:
+            return " <:ActionDone:1351392427637739633> You are already running the latest version."
+    except requests.exceptions.RequestException as e:
+        return f" <:ActionNotDone:1351396510054617210> Error checking for updates: {e}"
+    except KeyError:
+        return " <:ActionNotDone:1351396510054617210> Error parsing release information from GitHub."
+
+
+# Version info...
+
 
 logger("warn", "Discord.py is installed! If you get a module error please report it to the bug tracker here [placeholder link]")
 
@@ -260,6 +302,12 @@ async def image(ctx: discord.ApplicationContext, query: discord.Option(str, "Wha
     await ctx.defer()
     image_url = get_gimg(query)
     await ctx.followup.send(image_url)
+
+@bot.slash_command(name="update", description="check for a update")
+async def update(ctx: discord.ApplicationContext):
+    init = f"{ctx.guild}, {ctx.channel}"
+    await ctx.respond(f"{update_bot(ctx.user, init)}")  # need to make this
+
 @bot.command()
 async def remoji(ctx):
     random_number = random.randint(0, len(emojis) - 1)
