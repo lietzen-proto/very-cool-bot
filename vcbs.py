@@ -56,7 +56,7 @@ def get_Gimg_apikey():
         with open('.apikeys.json', 'r') as f:
             data = json.load(f)
             global cse
-            cse = data['apikeys']['cse']
+            cse = "55612e53d0e624367"
             return data['apiKeys']['Google-images']
     except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
         logger("bad", f"Error reading API key: {e}")
@@ -126,9 +126,9 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.8
+version = 0.81
 channel = "public_beta"
-update_name = "the update update"
+update_name = "the update update, Patch 1"
 
 def update_bot(user, init):
     logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
