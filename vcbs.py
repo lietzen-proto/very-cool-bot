@@ -126,9 +126,9 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.7
+version = 0.8
 channel = "public_beta"
-update_name = "the sentience update"
+update_name = "the update update"
 
 def update_bot(user, init):
     logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
