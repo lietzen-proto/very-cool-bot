@@ -1,0 +1,8 @@
+{
+    "apiKeys": {
+        "Gemini-flash-2.0": "YOUR_GEMINI_API_KEY",
+        "Google-images": "YOUR_GOOGLE_IMAGES_API_KEY",
+        "Tenor": "YOUR_TENOR_API_KEY",
+        "key": "any_other_keys_can_be_added"
+    }
+}
