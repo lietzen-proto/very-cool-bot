@@ -10,7 +10,7 @@ try:
     import colorama # type: ignore
     from cryptography.fernet import Fernet # type: ignore
     import requests
-
+    from google import genai
 except ImportError:
     print("dependencies not installed, installing now")
     import os
@@ -18,6 +18,7 @@ except ImportError:
     os.system("pip install colorama")
     os.system("pip install cryptography")
     os.system("pip install requests")
+    os.system("pip install google-genai")
     print("dependencies installed, remember to install dependencies next time dumbass")
 import discord # type: ignore
 from discord.ext import commands  # type: ignore | borrowing this from whirl
@@ -126,9 +127,9 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.81
+version = 0.82
 channel = "public_beta"
-update_name = "the update update, Patch 1"
+update_name = "the update update, Patch 2"
 
 def update_bot(user, init):
     logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
@@ -271,10 +272,12 @@ async def d6(ctx: discord.ApplicationContext):
     await ctx.respond(f'you rolled a {random.randint(1, 20)}')
     logger("command",f"{ctx.author} rolled a d20")
 # dice rolling ends here
+
 @bot.slash_command(name="wtf", description="Use this when you are very horrified")
 async def wtf(ctx: discord.ApplicationContext):
     await ctx.respond(f'{ctx.author} is very scared for their life.')
     logger("command", f"{ctx.author} was horrified")
+
 @bot.slash_command(name="help", description="help command, lists other commands (even tho discord does this)")
 async def help(ctx: discord.ApplicationContext):
     await ctx.respond('no.')
@@ -306,7 +309,7 @@ async def image(ctx: discord.ApplicationContext, query: discord.Option(str, "Wha
 @bot.slash_command(name="update", description="check for a update")
 async def update(ctx: discord.ApplicationContext):
     init = f"{ctx.guild}, {ctx.channel}"
-    await ctx.respond(f"{update_bot(ctx.user, init)}")  # need to make this
+    await ctx.respond(f"{update_bot(ctx.user, init)}")
 
 @bot.command()
 async def remoji(ctx):
