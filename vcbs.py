@@ -127,7 +127,7 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.82
+version = 0.83
 channel = "public_beta"
 update_name = "the update update, Patch 2"
 
