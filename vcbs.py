@@ -318,5 +318,11 @@ async def remoji(ctx):
     await ctx.send(emoji)
     logger("command", f"{ctx.author} used $remoji")
 
+# Badmin commands will ensue
+badmin = bot.create_group("Badmin", "Bad Admin tools")
+@badmin.command(name="ban", description="Ban someone")
+async def ban(ctx: discord.ApplicationContext):
+    print("code here")
+
 bot.run(token.decode('utf-8')) # run the bot with the decrypted token from line 72
 
