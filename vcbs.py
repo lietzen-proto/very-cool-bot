@@ -1,25 +1,9 @@
 import sys # importing basic modules
 import os
+os.system("pip install -r requirements.txt")
 import base64
 import encodings
 import json
-os.system("echo off")
-print("making sure you have thy dependencies installed") 
-try:
-    import discord # type: ignore
-    import colorama # type: ignore
-    from cryptography.fernet import Fernet # type: ignore
-    import requests
-    from google import genai
-except ImportError:
-    print("dependencies not installed, installing now")
-    import os
-    os.system("pip install py-cord")
-    os.system("pip install colorama")
-    os.system("pip install cryptography")
-    os.system("pip install requests")
-    os.system("pip install google-genai")
-    print("dependencies installed, remember to install dependencies next time dumbass")
 import discord # type: ignore
 from discord.ext import commands  # type: ignore | borrowing this from whirl
 from colorama import Fore, Back, Style # type: ignore
@@ -28,6 +12,7 @@ import random # type: ignore
 from cryptography.fernet import Fernet # type: ignore
 import requests
 from google import genai
+import time
 print("loading Logger...")
 def logger(arg1, arg2): # logger("log, debug, mod, command", "message") Supports F
     if arg1.lower() == "debug":
@@ -127,13 +112,15 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.83
+version = 0.9
 channel = "public_beta"
-update_name = "the update update, Patch 2"
+update_name = "the bday update"
 
 def update_bot(user, init):
     logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
     try:
+        global latest_version
+        global e
         # Replace 'YourUsername' and 'YourRepository' with your actual GitHub username and repository name
         github_api_url = "https://api.github.com/repos/Lietzen-py/very-cool-bot/releases/latest"
         headers = {}
@@ -146,18 +133,14 @@ def update_bot(user, init):
         latest_release_url = release_info["html_url"]
 
         if latest_version > str(version):
-            os.system("python3 update.py")
-            return (
-                f"A new version is available! Current version: {version}, Latest version: {latest_version}. "
-                f" <:Actionpending:1351789321140699191> Downloading update!"
-            )
+            return f"A new version is available! Current version: {version}, Latest version: {latest_version}. "
 
         else:
-            return " <:ActionDone:1351392427637739633> You are already running the latest version."
+            return "<:ActionDone:1351392427637739633> You are already running the latest version."
     except requests.exceptions.RequestException as e:
         return f" <:ActionNotDone:1351396510054617210> Error checking for updates: {e}"
     except KeyError:
-        return " <:ActionNotDone:1351396510054617210> Error parsing release information from GitHub."
+        return "<:ActionNotDone:1351396510054617210> Error parsing release information from GitHub."
 
 
 # Version info...
@@ -289,7 +272,8 @@ async def help(ctx: discord.ApplicationContext):
 @bot.slash_command(name="rgif", description="Picks a random gif from tenor")
 async def rgif(ctx: discord.ApplicationContext, query: discord.Option(str, "choose what topic of gif")):
     await ctx.defer()
-    await ctx.respond(f"{get_tenor_gif(query)}")
+    gif_url = get_tenor_gif(query)
+    await ctx.followup.send(gif_url)
 
 @bot.slash_command(name="ask", description="Ask gemini 2.0 a question")
 async def askai(ctx: discord.ApplicationContext, prompt: discord.Option(str, "Prompt for gemini")):
@@ -308,8 +292,12 @@ async def image(ctx: discord.ApplicationContext, query: discord.Option(str, "Wha
 
 @bot.slash_command(name="update", description="check for a update")
 async def update(ctx: discord.ApplicationContext):
+    await ctx.defer()  # Acknowledge the interaction immediately
     init = f"{ctx.guild}, {ctx.channel}"
-    await ctx.respond(f"{update_bot(ctx.user, init)}")
+    update_message = update_bot(ctx.author, init)
+    await ctx.followup.send(update_message)
+    if "A new version is available!" in update_message:
+        os.system("python3 update.py")
 
 @bot.command()
 async def remoji(ctx):
@@ -318,11 +306,67 @@ async def remoji(ctx):
     await ctx.send(emoji)
     logger("command", f"{ctx.author} used $remoji")
 
-# Badmin commands will ensue
-badmin = bot.create_group("Badmin", "Bad Admin tools")
+from discord.commands import SlashCommandGroup
+
+import datetime
+async def schedule_message():
+    target_user_id = 944722638624948315  # The user ID to send the message to
+    target_date = datetime.date(datetime.date.year, 3, 22)  # The specific date (Year, Month, Day)
+
+    while True:
+        # Get the current date
+        current_date = datetime.date.today()
+
+        # Check if the current date matches the target date
+        if current_date == target_date:
+            user = await bot.fetch_user(target_user_id)  # Fetch the user by ID
+            if user:
+                try:
+                    await user.send("Happy Birthday Suchanub!\n-#this message was customized by <@903468085099520000>")  # Send the message
+                    logger("log", f"Message sent to user {user.id} on {target_date}.")
+                except Exception as e:
+                    logger("bad", f"Failed to send message to user {user.id}: {e}")
+            break  # Exit the loop after sending the message
+
+        # Wait for 24 hours before checking again
+        await time.sleep(86400)
+
+# Define the badmin group
+badmin = SlashCommandGroup("badmin", "Bad Admin tools")
+
+@badmin.command(name="timeout", description="Timeout somebody")
+async def timeout(ctx: discord.ApplicationContext, member: discord.Member, reason: str = "No reason provided"):
+    if not ctx.guild.me.guild_permissions.moderate_members:
+        await ctx.respond("I don't have permission to Timeout members.", ephemeral=True)
+        logger("mod", f"bot doesnt have perms for that")
+        return
+    if not ctx.author.guild_permissions.moderate_members:
+        await ctx.respond("You dont have the permission to Timeout members, this has been logged", ephemeral=True)
+        logger("mod", f"{ctx.author} tried to use /Timeout on {member} for {reason}, watch for future attempts")
+        return
+    
+    print("placeholder")
+
+# Add the ban command to the badmin group
 @badmin.command(name="ban", description="Ban someone")
-async def ban(ctx: discord.ApplicationContext):
-    print("code here")
+async def ban(ctx: discord.ApplicationContext, member: discord.Member, reason: str = "No reason provided"):
+    # Check if the bot has permission to ban members
+    if not ctx.guild.me.guild_permissions.moderate_members:
+        await ctx.respond("I don't have permission to ban members.", ephemeral=True)
+        logger("mod", f"bot doesnt have perms for that")
+        return
+    if not ctx.author.guild_permissions.moderate_members:
+        await ctx.respond("You dont have the permission to ban members, this has been logged", ephemeral=True)
+        logger("mod", f"{ctx.author} tried to use /ban on {member} for {reason}, watch for future attempts")
+        return
+    # Ban the member
+    await member.ban(reason=reason)
+    await ctx.respond(f"Banned {member.mention} for reason: {reason}")
+    logger("mod", f"User {member} banned for {reason}")
+
+# Register the badmin group with the bot
+bot.add_application_command(badmin)
+
+
 
 bot.run(token.decode('utf-8')) # run the bot with the decrypted token from line 72
-
