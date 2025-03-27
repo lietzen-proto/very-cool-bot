@@ -102,7 +102,7 @@ github_token = get_github_apikey()
 
 version = 0.10
 channel = "public_beta"
-update_name = "the bday update"
+update_name = "The Extension Update"
 
 def update_bot(user, init):
     logger("command",f"{user} initiated an update, from {init}") # we check on github for a updated version
