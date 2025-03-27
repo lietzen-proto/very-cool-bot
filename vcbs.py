@@ -14,52 +14,40 @@ import requests
 from google import genai
 import time
 print("loading Logger...")
-def logger(arg1, arg2): # logger("log, debug, mod, command", "message") Supports F
-    if arg1.lower() == "debug":
-        status = Fore.GREEN + "[debug]".upper()
-    if arg1.lower() == "log":
-        status = Fore.LIGHTBLACK_EX + "[log]".upper()
-    if arg1.lower() == "bad":
-        status = Fore.RED + "[bad!]".upper()
-    if arg1.lower() == "mod":
-        status = Fore.CYAN + "[mod]".upper()
-    if arg1.lower() == "command":
-        status = Fore.LIGHTGREEN_EX + "[command]".upper()
-    if arg1.lower() == "warn":
-        status = Fore.YELLOW + "[warn]".upper()
-    print(f"{status} {Fore.RESET} {arg2}")
-def get_gemini_api_key():
-    try:
-        with open('.apikeys.json', 'r') as f:
-            data = json.load(f)
-            return data['apiKeys']['Gemini-flash-2.0']
-    except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
-        logger("bad", f"Error reading API key: {e}")
-        return None
-
-def get_Gimg_apikey():
-    try:
-        with open('.apikeys.json', 'r') as f:
-            data = json.load(f)
-            global cse
-            cse = "55612e53d0e624367"
-            return data['apiKeys']['Google-images']
-    except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
-        logger("bad", f"Error reading API key: {e}")
-        return None
-
-def get_tenor_apikey():
-    try:
-        with open('.apikeys.json', 'r') as f:
-            data = json.load(f)
-            return data['apiKeys']['Tenor']
-    except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
-        logger("bad", f"Error reading API key: {e}")
-        return None
-
+from logger import logger
+from extensionlib import *
+from apipy import *
+import importlib.util
 aikey = get_gemini_api_key()
 imgkey = get_Gimg_apikey()
 gifkey = get_tenor_apikey()
+
+def extensions(base_path="extensions"):
+    extensions = {}
+    for root, dirs, files in os.walk(base_path):
+        if "main.py" in files:  # Check if 'main.py' exists in the current folder
+            main_file = os.path.join(root, "main.py")
+            module_name = find_extension_info(os.path.join(root, "index.json"), "name")  # Use the name from index.json
+
+            # Dynamically load the module
+            spec = importlib.util.spec_from_file_location(module_name, main_file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # Set the main() function to the name of the extension
+            if hasattr(module, "main"):
+                extensions[module_name] = module.main
+                logger("extension", f"Loaded extension '{module_name}' with main() function.")
+            else:
+                logger("extension", f"Loaded extension '{module_name}' but no 'main()' function found.")
+
+    return extensions
+
+extensions_ = extensions()
+
+# call extensions with loaded_extensions["Extension"]()
+
+logger('debug', f"extensions found: {extensions}")
 def ask_gemini(prompt):
     try:
         client = genai.Client(api_key=aikey)
@@ -112,7 +100,7 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.9
+version = 0.10
 channel = "public_beta"
 update_name = "the bday update"
 
@@ -270,13 +258,13 @@ async def help(ctx: discord.ApplicationContext):
     await ctx.respond(':boom:')
 
 @bot.slash_command(name="rgif", description="Picks a random gif from tenor")
-async def rgif(ctx: discord.ApplicationContext, query: discord.Option(str, "choose what topic of gif")):
+async def rgif(ctx: discord.ApplicationContext, query: discord.Option(str, "choose what topic of gif")): # type: ignore
     await ctx.defer()
     gif_url = get_tenor_gif(query)
     await ctx.followup.send(gif_url)
 
 @bot.slash_command(name="ask", description="Ask gemini 2.0 a question")
-async def askai(ctx: discord.ApplicationContext, prompt: discord.Option(str, "Prompt for gemini")):
+async def askai(ctx: discord.ApplicationContext, prompt: discord.Option(str, "Prompt for gemini")): # type: ignore
     await ctx.defer()
     gemini_response = ask_gemini(str(prompt))
     if len(gemini_response) > 2000:
@@ -285,7 +273,7 @@ async def askai(ctx: discord.ApplicationContext, prompt: discord.Option(str, "Pr
     else:
         await ctx.respond(f"{gemini_response}")
 @bot.slash_command(name="image", description="get a certain image from google")
-async def image(ctx: discord.ApplicationContext, query: discord.Option(str, "What to search for")):
+async def image(ctx: discord.ApplicationContext, query: discord.Option(str, "What to search for")): # type: ignore
     await ctx.defer()
     image_url = get_gimg(query)
     await ctx.followup.send(image_url)
@@ -367,6 +355,35 @@ async def ban(ctx: discord.ApplicationContext, member: discord.Member, reason: s
 # Register the badmin group with the bot
 bot.add_application_command(badmin)
 
+firefly = SlashCommandGroup(
+    "firefly",
+    "A set of commands for the guild, FireFly",
+    guild_ids=[1333588480948703322]  # Replace with your guild ID
+)
+
+@firefly.command(name="getoslink", description="Gets the latest build of FireFly / Lightning")
+async def getlink(ctx: discord.ApplicationContext,
+                  version: discord.Option(str, choices=['lightning', 'firefly'])): # type: ignore
+    from gfs import getlatestbuild
+    await ctx.respond(f"{getlatestbuild(version, 'tw')}")
+
+@firefly.command(name="getoslinkdwnld", description="Gets the latest build and downloads it")
+async def getdwnld(ctx: discord.ApplicationContext,
+                   version: discord.Option(str, choices=['lightning', 'firefly'])): # type: ignore
+    from gfs import getlatestbuild
+    try:
+        # Get the download link
+        download_link = getlatestbuild(version, 'dl')
+        # Send the file to the channel
+        await ctx.respond(file=discord.File(download_link))
+    except Exception as e:
+        await ctx.respond(f"An error occurred: {e}")
 
 
-bot.run(token.decode('utf-8')) # run the bot with the decrypted token from line 72
+@firefly.command(name="putlightningintoitsplace", description="Yeah, you heard me.")
+async def assertdominance(ctx: discord.ApplicationContext):
+    await ctx.respond("<@1341152716583338084> is far less than the **POWER OF VERY COOL BOT**")
+
+
+bot.add_application_command(firefly)
+bot.run(token.decode('utf-8')) # run the bot with the decrypted token from line 72-
