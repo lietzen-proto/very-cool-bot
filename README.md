@@ -1,5 +1,5 @@
 # Very cool bot
-## [Our Discord](https://discord.gg/MD6cqvNxVH)
+### [Our Discord](https://discord.gg/MD6cqvNxVH)
 
 A (mostly) developed discord bot, made with pycord. With a fully functional extension system. 
 
@@ -8,4 +8,4 @@ A (mostly) developed discord bot, made with pycord. With a fully functional exte
 * Updates straight to code
 * Secures your bots token
 * Extension system for easier implementation
-[wiki](about:blank)
+
