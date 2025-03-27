@@ -100,7 +100,7 @@ def get_github_apikey():
 
 github_token = get_github_apikey()
 
-version = 0.10
+version = 1.0
 channel = "public_beta"
 update_name = "The Extension Update"
 
